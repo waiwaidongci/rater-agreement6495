@@ -1,1 +1,25 @@
-<script setup lang="ts">import Table from './common/Table.vue';import Status from './common/Status.vue';import {fmt} from '../utils/format';defineProps<{runs:any[]}>();defineEmits(['open']);</script><template><Table :headers="['研究运行','状态','重复/seed','κ','打开']"><tr v-for="r in runs" :key="r.id"><td><strong>{{r.name}}</strong><small>#{{r.id}} / 研究{{r.study_id}}</small></td><td><Status :value="r.status"/><small v-if="r.error" class="error-text">{{r.error}}</small></td><td>{{r.config.bootstrap_repeats}} / {{r.config.seed}}</td><td>{{r.kappa===null?'—':fmt(r.kappa,6)}}</td><td><button @click="$emit('open',r)">查看评议 ↗</button></td></tr></Table></template>
+<script setup lang="ts">
+import Table from './common/Table.vue';
+import Status from './common/Status.vue';
+import { fmt } from '../utils/format';
+defineProps<{ runs: any[] }>();
+defineEmits(['open']);
+</script>
+<template>
+ <Table :headers="['研究运行', '状态', '重复/seed', 'κ（原始）', '归并', '打开']">
+  <tr v-for="r in runs" :key="r.id">
+   <td><strong>{{ r.name }}</strong><small>#{{ r.id }} / 研究{{ r.study_id }}</small></td>
+   <td><Status :value="r.status" /><small v-if="r.error" class="error-text">{{ r.error }}</small></td>
+   <td>{{ r.config.bootstrap_repeats }} / {{ r.config.seed }}</td>
+   <td>{{ r.kappa === null ? '—' : fmt(r.kappa, 6) }}</td>
+   <td>
+    <template v-if="r.config?.category_merge">
+     <span class="status completed">已归并 {{ Object.values(r.config.category_merge).filter((v, i, a) => a.indexOf(v) === i).length }}类</span>
+     <small v-if="r.result?.comparison">差值 {{ r.result.comparison.point_delta === null ? '未定义' : fmt(r.result.comparison.point_delta, 4) }}</small>
+    </template>
+    <span v-else class="status">原类别</span>
+   </td>
+   <td><button @click="$emit('open', r)">查看评议 ↗</button></td>
+  </tr>
+ </Table>
+</template>

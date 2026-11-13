@@ -52,6 +52,12 @@ Compose恰好frontend/backend/worker/db/redis五服务，均有健康检查。Ng
 
 Bootstrap固定seed，B400–1000次；每次有放回抽N个完整计数行，保留每个抽取索引。每行原三票绑定，不能按单票抽，也不能把标记者当新抽样单位。每次重新计算κ；Pe=1的重复保存null κ、原抽取索引和失败原因，未补抽替换。
 
+### 岩相边界归并复核
+
+可选的`category_merge`映射（原类别→归并类别，必须覆盖全部声明类别、目标非空、归并后≥2类）在配置页随运行提交；漏映射、含未知类别、全部归为一类均422拒绝。映射只对计数行聚合，原始逐票、原始κ/P̄/Pe与原始bootstrap完全不变，结果同时保存逐试样原始计数与归并计数，逐试样及总票数必须对账（各3票、两侧总票相等）。
+
+归并运行的bootstrap是配对口径：同批试样、同一seed、同一次整行抽样，两侧分别计算κ。任一侧Pe=1的重复保留各自原因与行索引、不补抽，也不参与差值；只有两侧都有定义的重复进入差值（归并κ−原始κ）序列。有效配对≥90%才报告差值的2.5%/97.5%线性percentile区间，不足90%沿用“暂不报告”规则；归并侧点估计Pe=1时κ存null与原因，运行不失败（原始侧本身未定义时仍按原规则失败）。结果页与复核说明展示归并方案、两侧统计、差值与对账；批准CSV对归并快照输出25列（含两侧κ/P̄/Pe、有效数、区间、方案与逐试样两套计数），无归并快照仍是原16列。同方案同seed重算结果与指纹逐位一致，指纹版本随归并能力升至v2。
+
 有效数/B≥90%才报告有效重复κ的2.5%和97.5%线性percentile经验区间（NumPy quantile method=linear）；不足90%保留全部重复并明确“暂不报告”。这是预先设定的可报告门槛，不是有限样本精确覆盖保证。条件是试样iid、面板固定，不含抽取新标记者的不确定性；空间相关、共享图像或类别定义改变会影响解释。
 
 手算例四试样二类计数[3,0]/[2,1]/[1,2]/[0,3]：Pbar=2/3、Pe=.5、κ=1/3。B400/seed231得到397有效、3退化，经验区间约[-.3714285714,1]。两试样[3,0]/[0,3]虽κ1，但同参数只有205有效/195退化，不报告区间。真实API与浏览器都验证了这些边界。
@@ -60,7 +66,7 @@ MySQL的κ/Pbar/Pe列均用DOUBLE(asdecimal=False)，保持Python float，避免
 
 ## 结构与校验
 
-77个有职责的Python/TS/Vue/CSS源文件（不计空包、依赖和dist）。五实体AgreementStudy → Specimen → RaterVote → AgreementRun → ReviewMemo贯穿ORM/schema/service/routes、前端API/store和六页：评议总览、试样与逐票、固定面板配置、κ与重采样、口径复核、过程留痕。
+80个有职责的Python/TS/Vue/CSS源文件（不计空包、依赖和dist）。五实体AgreementStudy → Specimen → RaterVote → AgreementRun → ReviewMemo贯穿ORM/schema/service/routes、前端API/store和六页：评议总览、试样与逐票、固定面板配置、κ与重采样、口径复核、过程留痕。
 
 前端 `src/{api,stores,types,components/common,hooks,pages,router,utils,constants}`；后端 `src/{routes,controllers,services,models,schemas,middlewares,utils,constants,config}`，另scripts/seed_demo.py与migrations/。VoteMatrix、AgreementSummary、CategoryMargins、RunList多页复用，BootstrapStrip展示后端实际频数和经验区间；useTask/useRoute和format工具处理交互。
 
